@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PBL 模块评估 · RLPBL Self-Assessment</title>
+<link rel="stylesheet" href="css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"
+        onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/echarts@5.5.1/dist/echarts.min.js';document.head.appendChild(s);"></script>
+<!-- 文档解析库：mammoth 解析 .docx，pdf.js 解析 .pdf，JSZip 解析 .pptx -->
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"
+        onerror="console.warn('mammoth 加载失败')"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"
+        onerror="console.warn('pdf.js 加载失败')"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"
+        onerror="console.warn('JSZip 加载失败')"></script>
+<script>
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+</script>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3.2"/>
+          <path d="M12 2.6v3M12 18.4v3M2.6 12h3M18.4 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/>
+        </svg>
+      </div>
+      <div>
+        <h1>PBL 模块评估</h1>
+        <p>RLPBL Self-Assessment Rubric · V3</p>
+      </div>
+    </div>
+    <span class="badge">MOCK DATA</span>
+  </header>
+
+  <main class="workspace">
+
+    <!-- 左：输入 -->
+    <section class="panel panel-input">
+      <div class="panel-head">
+        <div class="panel-title"><span class="dot"></span>Handbook 文本</div>
+        <span class="panel-sub">粘贴课程设计文本</span>
+      </div>
+      <div class="body">
+        <div class="input-area">
+          <div class="tabs" role="tablist">
+            <button type="button" class="tab-btn active" data-tab="text">文本输入</button>
+            <button type="button" class="tab-btn" data-tab="file">上传文件</button>
+            <button type="button" class="tab-btn" data-tab="url">网页 URL</button>
+          </div>
+
+          <div class="tab-panels">
+            <div class="tab-panel active" data-tab="text">
+              <textarea id="handbook" spellcheck="false"
+                placeholder="在此粘贴 Handbook 文本，例如课程目标、项目流程、学习活动、评价方式与协作安排等内容……"></textarea>
+            </div>
+
+            <div class="tab-panel" data-tab="file">
+              <label class="dropzone" id="dropzone" for="fileInput">
+                <span class="dz-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/>
+                  </svg>
+                </span>
+                <p class="dz-title">拖拽文件到此处，或<u>点击上传</u></p>
+                <p class="dz-hint">支持 Word (.docx), PDF (.pdf), PPT (.pptx)</p>
+                <input type="file" id="fileInput" accept=".docx,.pdf,.pptx" hidden />
+              </label>
+              <div class="file-name" id="fileName"></div>
+            </div>
+
+            <div class="tab-panel" data-tab="url">
+              <input type="url" id="urlInput" class="url-input"
+                placeholder="https://example.com/handbook" />
+            </div>
+          </div>
+
+          <div class="input-footer">
+            <div>
+              <div class="counter" id="counter"><b>0</b> 字符</div>
+              <div class="hint" id="hint">请先粘贴 Handbook 文本</div>
+            </div>
+            <button class="assess-btn" id="assessBtn" type="button">
+              <span class="spinner" aria-hidden="true"></span>
+              <span id="btnLabel">开始评估</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="preview" id="preview">
+          <div class="preview-head">
+            <span class="preview-title">Handbook 原文预览</span>
+            <span class="preview-sub">Document Preview</span>
+          </div>
+          <div class="preview-body" id="previewBody">
+            <p class="preview-empty">评估完成后，此处将显示 Handbook 原文；悬浮右侧 Evidence 可定位对应原文。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右：雷达图 + 详细解析 -->
+    <section class="panel panel-result">
+      <div class="panel-head">
+        <div class="panel-title"><span class="dot"></span>五维评估结果</div>
+        <div class="status" id="status"><span class="pulse"></span><span id="statusText">等待评估</span></div>
+      </div>
+      <div class="body">
+        <div class="chart-wrap">
+          <div id="radar"></div>
+          <div class="empty-state" id="emptyState">
+            <div class="empty-ring">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3.2 3.6 8v8L12 20.8 20.4 16v-8z"/>
+                <path d="M12 3.2v17.6M3.6 8l16.8 8M20.4 8 3.6 16"/>
+              </svg>
+            </div>
+            <h3>评估结果将在此显示</h3>
+            <p>粘贴文本并点击「开始评估」，生成五维能力雷达图。</p>
+          </div>
+        </div>
+        <div class="scores" id="scores"></div>
+
+        <div class="analysis" id="analysis">
+          <div class="analysis-head">
+            <span class="analysis-title">Detailed Analysis</span>
+            <span class="analysis-sub">详细评估解析</span>
+          </div>
+          <div class="analysis-empty" id="analysisEmpty">完成评估后，此处将展示五个维度的详细解析。</div>
+          <div class="analysis-list" id="analysisList"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>
